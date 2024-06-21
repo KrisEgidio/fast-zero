@@ -177,3 +177,5 @@ pyrightconfig.json
 
 # Generated using ignr.py - github.com/Antrikshy/ignr.py
 
+fast_zero/__pycache__/
+tests/__pycache__/
