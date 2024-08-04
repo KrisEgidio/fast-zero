@@ -45,9 +45,10 @@ def test_read_user(client, user):
     }
 
 
-def test_update_user(client, user):
+def test_update_user(client, user, token):
     response = client.put(
-        '/users/1',
+        f'/users/{user.id}',
+        headers={'Authorization': f'Bearer {token}'},
         json={
             'username': 'testusername1',
             'password': '123',
@@ -58,37 +59,19 @@ def test_update_user(client, user):
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {
-        'id': 1,
+        'id': user.id,
         'username': 'testusername1',
         'email': 'test1@test.com',
     }
 
 
-def test_delete_user(client, user):
-    response = client.delete('/users/1')
+def test_delete_user(client, user, token):
+    response = client.delete(
+        f'/users/{user.id}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'message': 'User deleted'}
-
-
-def test_update_user_should_return_user_not_found(client, user):
-    response = client.put(
-        '/users/2',
-        json={
-            'username': 'testusername',
-            'password': '',
-            'email': 'test@test.com',
-            'id': 2,
-        },
-    )
-
-    assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': 'User not found'}
-
-
-def test_delete_user_should_return_user_not_found(client, user):
-    response = client.delete('/users/2')
-    assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': 'User not found'}
 
 
 def test_read_user_should_return_user_not_found(client, user):
@@ -135,3 +118,39 @@ def test_get_token(client, user):
     assert response.status_code == HTTPStatus.OK
     assert 'access_token' in token
     assert 'token_type' in token
+
+
+def test_update_user_should_return_not_enough_permissions(client, user, token):
+    response = client.put(
+        '/users/2',
+        headers={'Authorization': f'Bearer {token}'},
+        json={
+            'username': 'testusername1',
+            'password': '123',
+            'email': 'teste@email.com',
+            'id': 2,
+        },
+    )
+
+    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.json() == {'detail': 'Not enough permissions'}
+
+
+def test_delete_user_should_return_not_enough_permissions(client, user, token):
+    response = client.delete(
+        '/users/2',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.json() == {'detail': 'Not enough permissions'}
+
+
+def test_login_should_return_invalid_credentials(client):
+    response = client.post(
+        '/token',
+        data={'username': 'user1', 'password': '123'},
+    )
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'Incorrect email or password'}
