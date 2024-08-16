@@ -30,12 +30,12 @@ def test_read_users_with_user(client, user):
 
 
 def test_read_user(client, user):
-    response = client.get('/users/1')
+    response = client.get(f'/users/{user.id}')
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {
-        'id': 1,
-        'username': 'testusername',
-        'email': 'test@test.com',
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
     }
 
 
@@ -78,7 +78,7 @@ def test_create_user_should_return_username_exists(client, user):
     response = client.post(
         '/users',
         json={
-            'username': 'testusername',
+            'username': user.username,
             'password': '123',
             'email': 'test1@test.com',
         },
@@ -93,7 +93,7 @@ def test_create_user_should_return_email_exists(client, user):
         '/users',
         json={
             'username': 'username2',
-            'email': 'test@test.com',
+            'email': user.email,
             'password': '123',
         },
     )
@@ -102,9 +102,11 @@ def test_create_user_should_return_email_exists(client, user):
     assert response.json() == {'detail': 'Email already exists'}
 
 
-def test_update_user_should_return_not_enough_permissions(client, user, token):
+def test_update_user_should_return_not_enough_permissions(
+    client, other_user, token
+):
     response = client.put(
-        f'/users/{user.id + 1}',
+        f'/users/{other_user.id}',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'username': 'testusername1',
@@ -118,9 +120,11 @@ def test_update_user_should_return_not_enough_permissions(client, user, token):
     assert response.json() == {'detail': 'Not enough permissions'}
 
 
-def test_delete_user_should_return_not_enough_permissions(client, user, token):
+def test_delete_user_should_return_not_enough_permissions(
+    client, other_user, token
+):
     response = client.delete(
-        f'/users/{user.id + 1}',
+        f'/users/{other_user.id}',
         headers={'Authorization': f'Bearer {token}'},
     )
 
